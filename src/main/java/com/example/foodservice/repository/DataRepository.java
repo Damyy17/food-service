@@ -12,12 +12,12 @@ public class DataRepository {
     private static final BlockingQueue<Order> dataFromDH = new LinkedBlockingDeque<>();
     private static final BlockingQueue<Order> dataFromKitchen = new LinkedBlockingDeque<>();
 
-    public void addOrderFromDinningHall(Order order){
-        dataFromDH.add(order);
+    public void addOrderFromDinningHall(Order order) throws InterruptedException {
+        dataFromDH.put(order);
     }
 
-    public void addOrderFromKitchen(Order order){
-        dataFromKitchen.add(order);
+    public void addOrderFromKitchen(Order order) throws InterruptedException {
+        dataFromKitchen.put(order);
     }
 
     public static Order takeOrderFromDH() throws InterruptedException {
@@ -27,14 +27,5 @@ public class DataRepository {
     public static Order takeDataFromKitchen() throws InterruptedException {
         return dataFromKitchen.take();
     }
-
-    public static boolean checkIfEmptyDH(){
-        return dataFromDH.isEmpty();
-    }
-
-    public static boolean checkIfEmptyKitchen(){
-        return dataFromKitchen.isEmpty();
-    }
-
 
 }

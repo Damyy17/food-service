@@ -16,7 +16,7 @@ public class OrderController {
     OrderService orderService;
 
     @PostMapping(path = "/aggregator1", consumes = "application/json", produces = "application/json")
-    public ResponseEntity<Order> receiveOrderFromDinningHall(@RequestBody Order order) {
+    public ResponseEntity<Order> receiveOrderFromDinningHall(@RequestBody Order order) throws InterruptedException {
         System.out.println(order.toString());
         //add order to data structure
         orderService.addOrderToDH(order);
@@ -25,7 +25,7 @@ public class OrderController {
     }
 
     @PostMapping(path = "aggregator2", consumes = "application/json", produces = "application/json")
-    public ResponseEntity<Order> receiveOrderFromKitchen(@RequestBody Order order){
+    public ResponseEntity<Order> receiveOrderFromKitchen(@RequestBody Order order) throws InterruptedException {
         System.out.println(order.toString());
         //add order to data structure
         orderService.addOrderToKitchen(order);

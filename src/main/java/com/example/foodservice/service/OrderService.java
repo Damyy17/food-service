@@ -14,12 +14,11 @@ import java.util.concurrent.locks.ReentrantLock;
 @Service
 public class OrderService {
 
-    @Autowired
-    private DataRepository dataRepository;
-
     final static int NR_OF_THREADS = 5;
     static ReentrantLock mutex = new ReentrantLock();
 
+    @Autowired
+    private DataRepository dataRepository;
 
     public static void sendOrderToDH(Order order) throws URISyntaxException {
         RestTemplate restTemplate = new RestTemplate();
@@ -28,7 +27,7 @@ public class OrderService {
 
         try {
             restTemplate.postForEntity(uri, order, Order.class);
-        } catch (RestClientException e){
+        } catch (RestClientException e) {
             e.printStackTrace();
         }
     }
@@ -40,16 +39,16 @@ public class OrderService {
 
         try {
             restTemplate.postForEntity(uri, order, Order.class);
-        } catch (RestClientException e){
+        } catch (RestClientException e) {
             e.printStackTrace();
         }
     }
 
-    public void addOrderToDH(Order order){
+    public void addOrderToDH(Order order) throws InterruptedException {
         dataRepository.addOrderFromDinningHall(order);
     }
 
-    public void addOrderToKitchen(Order order){
+    public void addOrderToKitchen(Order order) throws InterruptedException {
         dataRepository.addOrderFromKitchen(order);
     }
 
@@ -61,62 +60,31 @@ public class OrderService {
         return DataRepository.takeDataFromKitchen();
     }
 
-    public static boolean checkIfEmptyDH(){
-        return DataRepository.checkIfEmptyDH();
-    }
-
-    public static boolean checkIfEmptyKitchen(){
-        return DataRepository.checkIfEmptyKitchen();
-    }
-
-    public static void sendToDinningHall(){
-        while(true){
+    public static void sendOrders(){
+        while (true){
             mutex.lock();
-            if (!checkIfEmptyKitchen()) {
-                Order order;
-                try {
-                    order = takeOrderFromKitchen();
-                    sendOrderToDH(order);
-                } catch (URISyntaxException | InterruptedException e) {
-                    e.printStackTrace();
-                }
-                try {
-                    Thread.sleep(3000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+            Order dhOrder, kitchenOrder;
+            try {
+                kitchenOrder = takeOrderFromDH();
+                sendOrderToKitchen(kitchenOrder);
+                dhOrder = takeOrderFromKitchen();
+                sendOrderToDH(dhOrder);
+            } catch (InterruptedException | URISyntaxException e) {
+                e.printStackTrace();
             }
-            mutex.unlock();
-        }
-    }
-
-    public static void sendToKitchen(){
-        while(true){
-            mutex.lock();
-            if (!checkIfEmptyDH()) {
-                Order order;
-                try {
-                    order = takeOrderFromDH();
-                    sendOrderToKitchen(order);
-                } catch (URISyntaxException | InterruptedException e) {
-                    e.printStackTrace();
-                }
-                try {
-                    Thread.sleep(3000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+            try {
+                Thread.sleep(3000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
             mutex.unlock();
         }
     }
 
     public static void runServer(){
-        for (int i = 1; i <= NR_OF_THREADS; i++) {
-            new Thread(OrderService::sendToKitchen).start();
-        }
-        for (int i = 1; i <= NR_OF_THREADS; i++) {
-            new Thread(OrderService::sendToDinningHall).start();
+        for (int i = 0; i < NR_OF_THREADS; i++) {
+            Thread orderSender = new Thread(OrderService::sendOrders);
+            orderSender.start();
         }
     }
 
